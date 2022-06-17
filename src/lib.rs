@@ -1,8 +1,6 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+//! Web of Things application server
+//!
+//! Provides all the building blocks to serve [Web Of Things](https://www.w3.org/WoT/) Things.
+
+pub mod advertise;
+pub mod servient;

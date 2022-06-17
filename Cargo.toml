@@ -8,3 +8,9 @@ repository = "https://github.com/sifis-home/wot-serve"
 keywords = ["wot", "WebofThings"]
 
 [dependencies]
+wot-td = { git = "https://github.com/sifis-home/wot-td" }
+mdns-sd = "0.5.1"
+thiserror = "1.0"
+anyhow = "1.0"
+if-addrs = "0.7"
+hostname = "0.3"
