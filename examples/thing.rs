@@ -1,4 +1,3 @@
-use axum::routing::get;
 use wot_serve::servient::*;
 use wot_td::builder::{
     affordance::BuildableInteractionAffordance, data_schema::SpecializableDataSchema,
@@ -13,10 +12,7 @@ async fn main() {
                 .ext_interaction(())
                 .ext_data_schema(())
                 .finish_extend_data_schema()
-                .form(|b| {
-                    b.ext(get(|| async { "Hello World!" }).into())
-                        .href("/hello")
-                })
+                .form(|b| b.http_get(|| async { "Hello World!" }).href("/hello"))
                 .string()
         })
         .build_servient()
