@@ -1,11 +1,11 @@
-use axum::{routing::MethodRouter, Router};
+use axum::{handler::Handler, routing::MethodRouter, Router};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use wot_td::{
-    builder::{ThingBuilder, ToExtend},
-    extend::ExtendableThing,
+    builder::{FormBuilder, ThingBuilder, ToExtend},
+    extend::{Extend, ExtendableThing},
     hlist::*,
-    thing::Thing,
+    thing::{FormOperation, Thing},
 };
 
 /// WoT Servient serving a Thing Description
@@ -120,12 +120,39 @@ where
     }
 }
 
+pub trait HttpRouter {
+    type Target;
+    fn http_get<H, T>(self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static;
+}
+
+impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm>
+where
+    Other: ExtendableThing + NonEmptyHList<Last = ServientExtension>,
+    OtherForm: Extend<Form>,
+{
+    type Target = FormBuilder<Other, Href, OtherForm::Target>;
+    fn http_get<H, T>(self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static,
+    {
+        let method_router: MethodRouter = axum::routing::get(handler);
+
+        self.op(FormOperation::ReadProperty)
+            .ext(method_router.into())
+    }
+}
+
 #[cfg(test)]
 mod test {
     use wot_td::thing::FormOperation;
 
+    use crate::servient::HttpRouter;
+
     use super::{BuildServient, Servient};
-    use axum::routing::get;
 
     #[test]
     fn build_servient() {
@@ -133,13 +160,13 @@ mod test {
             .finish_extend()
             .form(|f| {
                 f.href("/ref")
+                    .http_get(|| async { "Hello, World!" })
                     .op(FormOperation::ReadAllProperties)
-                    .ext(get(|| async { "Hello, World!" }).into())
             })
             .form(|f| {
                 f.href("/ref2")
+                    .http_get(|| async { "Hello, World! 2" })
                     .op(FormOperation::ReadAllProperties)
-                    .ext(get(|| async { "Hello, World! 2" }).into())
             })
             .build_servient()
             .unwrap();
