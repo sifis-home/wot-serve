@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use wot_td::{
     builder::{FormBuilder, ThingBuilder, ToExtend},
-    extend::{Extend, ExtendableThing},
+    extend::{Extend, Extendable, ExtendableThing},
     hlist::*,
-    thing::{FormOperation, Thing},
+    thing::Thing,
 };
 
 /// WoT Servient serving a Thing Description
@@ -15,10 +15,8 @@ pub struct Servient<Other: ExtendableThing = Nil> {
 }
 
 impl Servient<Nil> {
-    pub fn builder(
-        title: impl Into<String>,
-    ) -> ThingBuilder<Cons<ServientExtension, Nil>, ToExtend> {
-        ThingBuilder::<Nil, ToExtend>::new(title).ext(ServientExtension {})
+    pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
+        ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
 }
 
@@ -54,25 +52,10 @@ pub trait BuildServient {
     fn build_servient(self) -> Result<Servient<Self::Other>, Box<dyn std::error::Error>>;
 }
 
-trait SplitForm<'a> {
-    fn split_form(&'a self) -> &'a Form;
-}
-
-impl<'a, T: 'a, U: 'a> SplitForm<'a> for Cons<T, U>
-where
-    <&'a Cons<T, U> as HListRef>::Target: NonEmptyHList<Last = &'a Form>,
-    &'a U: HListRef,
-{
-    fn split_form(&'a self) -> &'a Form {
-        let r = self.to_ref();
-
-        r.split_last().0
-    }
-}
-
 impl<O: ExtendableThing> BuildServient for ThingBuilder<O, wot_td::builder::Extended>
 where
-    O::Form: for<'a> SplitForm<'a>,
+    O: Holder<ServientExtension>,
+    O::Form: Holder<Form>,
     O: Serialize,
 {
     type Other = O;
@@ -101,9 +84,7 @@ where
             .chain(actions_forms)
             .chain(events_forms)
         {
-            let other = &form.other;
-
-            let route = other.split_form();
+            let route = form.other.field_ref();
 
             router = router.route(&form.href, route.method_router.clone());
         }
@@ -130,19 +111,150 @@ pub trait HttpRouter {
 
 impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm>
 where
-    Other: ExtendableThing + NonEmptyHList<Last = ServientExtension>,
-    OtherForm: Extend<Form>,
+    Other: ExtendableThing + Holder<ServientExtension>,
+    OtherForm: Holder<Form>,
 {
-    type Target = FormBuilder<Other, Href, OtherForm::Target>;
-    fn http_get<H, T>(self, handler: H) -> Self::Target
+    type Target = FormBuilder<Other, Href, OtherForm>;
+    fn http_get<H, T>(mut self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
         T: 'static,
     {
         let method_router: MethodRouter = axum::routing::get(handler);
 
-        self.op(FormOperation::ReadProperty)
-            .ext(method_router.into())
+        *self.other.field_mut() = method_router.into();
+        self //.op(FormOperation::ReadProperty)
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NilPlus<T> {
+    #[serde(flatten)]
+    pub field: T,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConsPlus<T, U, V> {
+    #[serde(flatten)]
+    pub field: T,
+    cons: Cons<U, V>,
+}
+
+impl<T, U, V> ConsPlus<T, U, V> {
+    pub fn cons<Z>(self, value: Z) -> ConsPlus<T, Z, Cons<U, V>> {
+        let Self { field, cons } = self;
+
+        ConsPlus {
+            field,
+            cons: cons.cons(value),
+        }
+    }
+}
+
+impl<T> NilPlus<T> {
+    pub fn cons<V>(self, value: V) -> ConsPlus<T, V, Nil> {
+        let Self { field } = self;
+        ConsPlus {
+            field,
+            cons: Nil::cons(value),
+        }
+    }
+}
+
+impl<T: Default> Extendable for NilPlus<T> {
+    type Empty = NilPlus<T>;
+
+    fn empty() -> Self {
+        NilPlus {
+            field: Default::default(),
+        }
+    }
+}
+
+impl<T: Default, U, V> Extendable for ConsPlus<T, U, V> {
+    type Empty = NilPlus<T>;
+
+    fn empty() -> Self::Empty {
+        NilPlus {
+            field: Default::default(),
+        }
+    }
+}
+
+impl<T, U> Extend<U> for NilPlus<T> {
+    type Target = ConsPlus<T, U, Nil>;
+
+    fn ext(self, u: U) -> Self::Target {
+        let Self { field } = self;
+
+        ConsPlus {
+            field,
+            cons: Nil::cons(u),
+        }
+    }
+}
+
+impl<T, U, V, Z> Extend<Z> for ConsPlus<T, U, V> {
+    type Target = ConsPlus<T, Z, Cons<U, V>>;
+
+    fn ext(self, t: Z) -> Self::Target {
+        self.cons(t)
+    }
+}
+
+impl<T: ExtendableThing> ExtendableThing for NilPlus<T> {
+    type InteractionAffordance = NilPlus<T::InteractionAffordance>;
+    type PropertyAffordance = NilPlus<T::PropertyAffordance>;
+    type ActionAffordance = NilPlus<T::ActionAffordance>;
+    type EventAffordance = NilPlus<T::EventAffordance>;
+    type Form = NilPlus<T::Form>;
+    type ExpectedResponse = NilPlus<T::ExpectedResponse>;
+    type DataSchema = NilPlus<T::DataSchema>;
+    type ObjectSchema = NilPlus<T::ObjectSchema>;
+    type ArraySchema = NilPlus<T::ArraySchema>;
+}
+
+impl<T, U, V> ExtendableThing for ConsPlus<T, U, V>
+where
+    T: ExtendableThing,
+    U: ExtendableThing,
+    V: ExtendableThing,
+{
+    type InteractionAffordance =
+        ConsPlus<T::InteractionAffordance, U::InteractionAffordance, V::InteractionAffordance>;
+    type PropertyAffordance =
+        ConsPlus<T::PropertyAffordance, U::PropertyAffordance, V::InteractionAffordance>;
+    type ActionAffordance = ConsPlus<T::ActionAffordance, U::ActionAffordance, V::ActionAffordance>;
+    type EventAffordance = ConsPlus<T::EventAffordance, U::EventAffordance, V::EventAffordance>;
+    type Form = ConsPlus<T::Form, U::Form, V::Form>;
+    type ExpectedResponse = ConsPlus<T::ExpectedResponse, U::ExpectedResponse, V::ExpectedResponse>;
+    type DataSchema = ConsPlus<T::DataSchema, U::DataSchema, V::DataSchema>;
+    type ObjectSchema = ConsPlus<T::ObjectSchema, U::ObjectSchema, V::ObjectSchema>;
+    type ArraySchema = ConsPlus<T::ArraySchema, U::ArraySchema, U::ArraySchema>;
+}
+
+trait Holder<T> {
+    fn field_ref(&self) -> &T;
+    fn field_mut(&mut self) -> &mut T;
+}
+
+impl<T> Holder<T> for NilPlus<T> {
+    fn field_ref(&self) -> &T {
+        &self.field
+    }
+
+    fn field_mut(&mut self) -> &mut T {
+        &mut self.field
+    }
+}
+
+impl<T, U, V> Holder<T> for ConsPlus<T, U, V> {
+    fn field_ref(&self) -> &T {
+        &self.field
+    }
+
+    fn field_mut(&mut self) -> &mut T {
+        &mut self.field
     }
 }
 
