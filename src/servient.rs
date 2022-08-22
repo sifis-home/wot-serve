@@ -107,6 +107,22 @@ pub trait HttpRouter {
     where
         H: Handler<T, axum::body::Body>,
         T: 'static;
+    fn http_put<H, T>(self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static;
+    fn http_post<H, T>(self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static;
+    fn http_patch<H, T>(self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static;
+    fn http_delete<H, T>(self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static;
 }
 
 impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm>
@@ -123,7 +139,47 @@ where
         let method_router: MethodRouter = axum::routing::get(handler);
 
         *self.other.field_mut() = method_router.into();
-        self //.op(FormOperation::ReadProperty)
+        self
+    }
+    fn http_put<H, T>(mut self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static,
+    {
+        let method_router: MethodRouter = axum::routing::put(handler);
+
+        *self.other.field_mut() = method_router.into();
+        self
+    }
+    fn http_post<H, T>(mut self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static,
+    {
+        let method_router: MethodRouter = axum::routing::post(handler);
+
+        *self.other.field_mut() = method_router.into();
+        self
+    }
+    fn http_patch<H, T>(mut self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static,
+    {
+        let method_router: MethodRouter = axum::routing::patch(handler);
+
+        *self.other.field_mut() = method_router.into();
+        self
+    }
+    fn http_delete<H, T>(mut self, handler: H) -> Self::Target
+    where
+        H: Handler<T, axum::body::Body>,
+        T: 'static,
+    {
+        let method_router: MethodRouter = axum::routing::delete(handler);
+
+        *self.other.field_mut() = method_router.into();
+        self
     }
 }
 
@@ -260,7 +316,7 @@ impl<T, U, V> Holder<T> for ConsPlus<T, U, V> {
 
 #[cfg(test)]
 mod test {
-    use wot_td::thing::FormOperation;
+    use wot_td::{builder::affordance::*, builder::data_schema::*, thing::FormOperation};
 
     use crate::servient::HttpRouter;
 
@@ -279,6 +335,58 @@ mod test {
                 f.href("/ref2")
                     .http_get(|| async { "Hello, World! 2" })
                     .op(FormOperation::ReadAllProperties)
+            })
+            .build_servient()
+            .unwrap();
+
+        dbg!(&servient.router);
+    }
+
+    #[test]
+    fn build_servient_property() {
+        let servient = Servient::builder("test")
+            .finish_extend()
+            .property("hello", |b| {
+                b.finish_extend_data_schema()
+                    .null()
+                    .form(|f| {
+                        f.href("/hello")
+                            .http_get(|| async { "Reading Hello, World!" })
+                            .op(FormOperation::ReadProperty)
+                    })
+                    .form(|f| {
+                        f.href("/hello")
+                            .http_put(|| async { "Writing Hello, World!" })
+                            .op(FormOperation::WriteProperty)
+                    })
+            })
+            .build_servient()
+            .unwrap();
+
+        dbg!(&servient.router);
+    }
+
+    #[test]
+    fn build_servient_action() {
+        let servient = Servient::builder("test")
+            .finish_extend()
+            .action("hello", |b| {
+                b.input(|i| i.finish_extend().number()).form(|f| {
+                    f.href("/say_hello")
+                        .http_post(|| async { "Saying Hello, World!" })
+                })
+            })
+            .action("update", |b| {
+                b.form(|f| {
+                    f.href("/update_hello")
+                        .http_patch(|| async { "Updating Hello, World!" })
+                })
+            })
+            .action("delete", |b| {
+                b.form(|f| {
+                    f.href("/delete_hello")
+                        .http_delete(|| async { "Goodbye, World!" })
+                })
             })
             .build_servient()
             .unwrap();
