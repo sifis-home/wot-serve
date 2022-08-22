@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 use wot_serve::servient::*;
 use wot_td::{
@@ -42,8 +44,13 @@ async fn main() {
 
     eprintln!("Listening to 127.0.0.1:8080");
     dbg!(&servient.router);
-    axum::Server::bind(&"127.0.0.1:8080".parse().unwrap())
-        .serve(servient.router.into_make_service())
-        .await
-        .unwrap();
+
+    println!("Running the servient for 2 seconds.");
+    let _ = tokio::time::timeout(Duration::from_secs(2), async {
+        axum::Server::bind(&"127.0.0.1:8080".parse().unwrap())
+            .serve(servient.router.into_make_service())
+            .await
+            .unwrap();
+    })
+    .await;
 }

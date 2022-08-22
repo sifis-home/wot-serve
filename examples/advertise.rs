@@ -6,7 +6,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ad = Advertiser::new()?;
     ad.add_service("lamp").build()?;
 
-    loop {
-        sleep(Duration::from_millis(100));
-    }
+    println!("Advertising for 1 second");
+    sleep(Duration::from_millis(1000));
+
+    Ok(())
 }
