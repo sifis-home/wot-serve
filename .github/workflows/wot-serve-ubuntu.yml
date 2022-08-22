@@ -102,6 +102,8 @@ jobs:
           -Coverflow-checks=off
       run: |
         cargo test --verbose
+        cargo run --example advertise
+        cargo run --example thing
 
     - name: Get coverage data
       run: |
