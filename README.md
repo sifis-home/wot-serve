@@ -2,6 +2,9 @@
 
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://github.com/sifis-home/wot-serve/workflows/wot-serve/badge.svg)](https://github.com/sifis-home/wot-serve/actions)
+[![Crates.io](https://img.shields.io/crates/v/wot-serve.svg)](https://crates.io/crates/wot-serve)
+[![dependency status](https://deps.rs/repo/github/sifis-home/wot-serve/status.svg)](https://deps.rs/repo/github/sifis-home/wot-serve)
+[![Documentation](https://docs.rs/wot-serve/badge.svg)](https://docs.rs/wot-serve/)
 
 
 Rust crate to serve [Web Of Things](https://www.w3.org/WoT/) Things.
