@@ -29,12 +29,6 @@ pub struct Form {
     method_router: MethodRouter,
 }
 
-impl From<MethodRouter> for Form {
-    fn from(method_router: MethodRouter) -> Self {
-        Self { method_router }
-    }
-}
-
 impl ExtendableThing for ServientExtension {
     type InteractionAffordance = ();
     type PropertyAffordance = ();
@@ -136,9 +130,8 @@ where
         H: Handler<T, axum::body::Body>,
         T: 'static,
     {
-        let method_router: MethodRouter = axum::routing::get(handler);
-
-        *self.other.field_mut() = method_router.into();
+        let method_router = std::mem::take(&mut self.other.field_mut().method_router);
+        self.other.field_mut().method_router = method_router.get(handler);
         self
     }
     fn http_put<H, T>(mut self, handler: H) -> Self::Target
@@ -146,9 +139,8 @@ where
         H: Handler<T, axum::body::Body>,
         T: 'static,
     {
-        let method_router: MethodRouter = axum::routing::put(handler);
-
-        *self.other.field_mut() = method_router.into();
+        let method_router = std::mem::take(&mut self.other.field_mut().method_router);
+        self.other.field_mut().method_router = method_router.put(handler);
         self
     }
     fn http_post<H, T>(mut self, handler: H) -> Self::Target
@@ -156,9 +148,8 @@ where
         H: Handler<T, axum::body::Body>,
         T: 'static,
     {
-        let method_router: MethodRouter = axum::routing::post(handler);
-
-        *self.other.field_mut() = method_router.into();
+        let method_router = std::mem::take(&mut self.other.field_mut().method_router);
+        self.other.field_mut().method_router = method_router.post(handler);
         self
     }
     fn http_patch<H, T>(mut self, handler: H) -> Self::Target
@@ -166,9 +157,8 @@ where
         H: Handler<T, axum::body::Body>,
         T: 'static,
     {
-        let method_router: MethodRouter = axum::routing::patch(handler);
-
-        *self.other.field_mut() = method_router.into();
+        let method_router = std::mem::take(&mut self.other.field_mut().method_router);
+        self.other.field_mut().method_router = method_router.patch(handler);
         self
     }
     fn http_delete<H, T>(mut self, handler: H) -> Self::Target
@@ -176,9 +166,8 @@ where
         H: Handler<T, axum::body::Body>,
         T: 'static,
     {
-        let method_router: MethodRouter = axum::routing::delete(handler);
-
-        *self.other.field_mut() = method_router.into();
+        let method_router = std::mem::take(&mut self.other.field_mut().method_router);
+        self.other.field_mut().method_router = method_router.delete(handler);
         self
     }
 }
@@ -347,18 +336,13 @@ mod test {
         let servient = Servient::builder("test")
             .finish_extend()
             .property("hello", |b| {
-                b.finish_extend_data_schema()
-                    .null()
-                    .form(|f| {
-                        f.href("/hello")
-                            .http_get(|| async { "Reading Hello, World!" })
-                            .op(FormOperation::ReadProperty)
-                    })
-                    .form(|f| {
-                        f.href("/hello")
-                            .http_put(|| async { "Writing Hello, World!" })
-                            .op(FormOperation::WriteProperty)
-                    })
+                b.finish_extend_data_schema().null().form(|f| {
+                    f.href("/hello")
+                        .http_get(|| async { "Reading Hello, World!" })
+                        .http_put(|| async { "Writing Hello, World!" })
+                        .op(FormOperation::ReadProperty)
+                        .op(FormOperation::WriteProperty)
+                })
             })
             .build_servient()
             .unwrap();
