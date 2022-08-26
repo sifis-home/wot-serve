@@ -7,9 +7,15 @@ use wot_td::{
     extend::ExtendableThing,
 };
 
+#[doc(hidden)]
+/// ThingBuilder ExtendableThing used to build a Servient via HttpRouter methods.
+///
+/// It is not needed to know about it nor use it.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct ServientExtension {}
 
+#[doc(hidden)]
+/// Form Extension
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Form {
     #[serde(skip)]
@@ -47,6 +53,7 @@ where
 {
     type Other = O;
 
+    /// Build the configured Servient
     fn build_servient(self) -> Result<Servient<Self::Other>, Box<dyn std::error::Error>> {
         let thing = self.build()?;
 
@@ -90,22 +97,27 @@ where
 
 pub trait HttpRouter {
     type Target;
+    /// Route GET requests to the given handler.
     fn http_get<H, T>(self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
         T: 'static;
+    /// Route PUT requests to the given handler.
     fn http_put<H, T>(self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
         T: 'static;
+    /// Route POST requests to the given handler.
     fn http_post<H, T>(self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
         T: 'static;
+    /// Route PATCH requests to the given handler.
     fn http_patch<H, T>(self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
         T: 'static;
+    /// Route DELETE requests to the given handler.
     fn http_delete<H, T>(self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
@@ -118,6 +130,8 @@ where
     OtherForm: Holder<Form>,
 {
     type Target = FormBuilder<Other, Href, OtherForm>;
+
+    /// Route GET requests to the given handler.
     fn http_get<H, T>(mut self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
@@ -127,6 +141,7 @@ where
         self.other.field_mut().method_router = method_router.get(handler);
         self
     }
+    /// Route PUT requests to the given handler.
     fn http_put<H, T>(mut self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
@@ -136,6 +151,7 @@ where
         self.other.field_mut().method_router = method_router.put(handler);
         self
     }
+    /// Route POST requests to the given handler.
     fn http_post<H, T>(mut self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
@@ -145,6 +161,7 @@ where
         self.other.field_mut().method_router = method_router.post(handler);
         self
     }
+    /// Route PATCH requests to the given handler.
     fn http_patch<H, T>(mut self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,
@@ -154,6 +171,7 @@ where
         self.other.field_mut().method_router = method_router.patch(handler);
         self
     }
+    /// Route DELETE requests to the given handler.
     fn http_delete<H, T>(mut self, handler: H) -> Self::Target
     where
         H: Handler<T, axum::body::Body>,

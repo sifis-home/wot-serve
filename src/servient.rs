@@ -1,3 +1,5 @@
+//! Web of Thing Servient
+
 use crate::hlist::NilPlus;
 use axum::Router;
 use wot_td::{
@@ -13,11 +15,14 @@ pub use builder::*;
 
 /// WoT Servient serving a Thing Description
 pub struct Servient<Other: ExtendableThing = Nil> {
+    /// The Thing Description representing the servient
     pub thing: Thing<Other>,
+    /// The http router
     pub router: Router,
 }
 
 impl Servient<Nil> {
+    /// Instantiate a ThingBuilder with its Form augmented with [[HttpRouter]] methods.
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
