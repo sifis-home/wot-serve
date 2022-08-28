@@ -1,6 +1,8 @@
 //! Web of Thing Servient
 
-use crate::hlist::NilPlus;
+use std::net::SocketAddr;
+
+use crate::{advertise::Advertiser, advertise::ThingType, hlist::NilPlus};
 use axum::Router;
 use wot_td::{
     builder::{ThingBuilder, ToExtend},
@@ -15,10 +17,20 @@ pub use builder::*;
 
 /// WoT Servient serving a Thing Description
 pub struct Servient<Other: ExtendableThing = Nil> {
+    /// hostname for the thing
+    ///
+    /// Used in the DNS-SD advertisement by default
+    pub name: String,
     /// The Thing Description representing the servient
     pub thing: Thing<Other>,
-    /// The http router
+    /// The http router for the servient
     pub router: Router,
+    /// DNS-SD advertisement
+    pub sd: Advertiser,
+    /// Address the http server will bind to
+    pub http_addr: SocketAddr,
+    /// The type of thing advertised
+    pub thing_type: ThingType,
 }
 
 impl Servient<Nil> {
@@ -32,7 +44,9 @@ impl Servient<Nil> {
 mod test {
     use wot_td::{builder::affordance::*, builder::data_schema::*, thing::FormOperation};
 
-    use super::{BuildServient, HttpRouter, Servient};
+    use crate::advertise::ThingType;
+
+    use super::*;
 
     #[test]
     fn build_servient() {
@@ -99,5 +113,19 @@ mod test {
             .unwrap();
 
         dbg!(&servient.router);
+    }
+
+    #[test]
+    fn servient_setup() {
+        let addr = "0.0.0.0:3000".parse().unwrap();
+        let servient = Servient::builder("test me")
+            .finish_extend()
+            .http_bind(addr)
+            .thing_type(ThingType::Directory)
+            .build_servient()
+            .unwrap();
+
+        assert_eq!(servient.http_addr, addr);
+        assert_eq!(servient.thing_type, ThingType::Directory);
     }
 }
