@@ -1,7 +1,14 @@
-use crate::{hlist::*, servient::Servient};
+use std::net::SocketAddr;
+
+use crate::{
+    advertise::{Advertiser, ThingType},
+    hlist::*,
+    servient::Servient,
+};
 use axum::{handler::Handler, routing::MethodRouter, Router};
 
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use wot_td::{
     builder::{FormBuilder, ThingBuilder},
     extend::ExtendableThing,
@@ -12,7 +19,14 @@ use wot_td::{
 ///
 /// It is not needed to know about it nor use it.
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
-pub struct ServientExtension {}
+pub struct ServientExtension {
+    /// Listening address
+    #[serde(skip)]
+    addr: Option<SocketAddr>,
+    /// Thing type
+    #[serde(skip)]
+    thing_type: ThingType,
+}
 
 #[doc(hidden)]
 /// Form Extension
@@ -40,8 +54,35 @@ impl ExtendableThing for ServientExtension {
     type ArraySchema = ();
 }
 
+/// Extension trait for the [Servient] configuration.
+pub trait ServientSettings {
+    /// Bind the http server to addr
+    fn http_bind(self, addr: SocketAddr) -> Self;
+    /// Set the thing type to be advertised.
+    fn thing_type(self, ty: ThingType) -> Self;
+}
+
+impl<O: ExtendableThing> ServientSettings for ThingBuilder<O, wot_td::builder::Extended>
+where
+    O: Holder<ServientExtension>,
+{
+    fn http_bind(mut self, addr: SocketAddr) -> Self {
+        self.other.field_mut().addr = Some(addr);
+        self
+    }
+
+    fn thing_type(mut self, ty: ThingType) -> Self {
+        self.other.field_mut().thing_type = ty;
+        self
+    }
+}
+
+/// Trait extension to build a [Servient] from an extended [ThingBuilder]
+///
+/// TODO: Add an example
 pub trait BuildServient {
     type Other: ExtendableThing;
+    /// Build the configured Servient
     fn build_servient(self) -> Result<Servient<Self::Other>, Box<dyn std::error::Error>>;
 }
 
@@ -91,7 +132,36 @@ where
             axum::routing::get(move || async { axum::Json(json) }),
         );
 
-        Ok(Servient { thing, router })
+        let sd = Advertiser::new()?;
+
+        let name = {
+            let name = thing
+                .title
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .to_lowercase();
+            let uuid = Uuid::new_v4();
+
+            format!("{}{}", name, uuid.as_simple())
+        };
+
+        let http_addr = thing
+            .other
+            .field_ref()
+            .addr
+            .unwrap_or_else(|| "0.0.0.0:8080".parse().unwrap());
+
+        let thing_type = thing.other.field_ref().thing_type.clone();
+
+        Ok(Servient {
+            name,
+            thing,
+            router,
+            sd,
+            http_addr,
+            thing_type,
+        })
     }
 }
 

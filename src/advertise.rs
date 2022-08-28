@@ -32,9 +32,10 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Type of thing being published
-#[derive(Debug)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum ThingType {
     /// Normal thing
+    #[default]
     Thing,
     /// Directory
     ///
