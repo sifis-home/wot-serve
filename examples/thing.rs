@@ -27,6 +27,7 @@ async fn main() {
     let servient = Servient::builder("TestThing")
         .ext(A {})
         .finish_extend()
+        .http_bind("127.0.0.1:8080".parse().unwrap())
         .property("hello", |b| {
             b.ext(())
                 .ext_interaction(())
@@ -45,12 +46,9 @@ async fn main() {
     eprintln!("Listening to 127.0.0.1:8080");
     dbg!(&servient.router);
 
-    println!("Running the servient for 2 seconds.");
-    let _ = tokio::time::timeout(Duration::from_secs(2), async {
-        axum::Server::bind(&"127.0.0.1:8080".parse().unwrap())
-            .serve(servient.router.into_make_service())
-            .await
-            .unwrap();
+    println!("Running the servient for 10 seconds.");
+    let _ = tokio::time::timeout(Duration::from_secs(10), async {
+        servient.serve().await.unwrap()
     })
     .await;
 }
