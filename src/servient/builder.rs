@@ -152,7 +152,7 @@ where
             .addr
             .unwrap_or_else(|| "0.0.0.0:8080".parse().unwrap());
 
-        let thing_type = thing.other.field_ref().thing_type.clone();
+        let thing_type = thing.other.field_ref().thing_type;
 
         Ok(Servient {
             name,
