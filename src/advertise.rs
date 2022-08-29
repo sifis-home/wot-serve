@@ -32,7 +32,7 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Type of thing being published
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Copy)]
 pub enum ThingType {
     /// Normal thing
     #[default]
@@ -44,14 +44,14 @@ pub enum ThingType {
 }
 
 impl ThingType {
-    fn to_service_type(&self) -> &'static str {
+    fn to_service_type(self) -> &'static str {
         use ThingType::*;
         match self {
             Thing => "_wot",
             Directory => "_directory._sub._wot",
         }
     }
-    fn to_dns_type(&self) -> &'static str {
+    fn to_dns_type(self) -> &'static str {
         use ThingType::*;
         match self {
             Thing => "Thing",
