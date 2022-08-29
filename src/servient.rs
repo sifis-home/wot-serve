@@ -15,6 +15,15 @@ mod builder;
 
 pub use builder::*;
 
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("http internal error {0}")]
+    Http(#[from] axum::Error),
+
+    #[error("mdns internal error {0}")]
+    Advertise(#[from] crate::advertise::Error),
+}
+
 /// WoT Servient serving a Thing Description
 pub struct Servient<Other: ExtendableThing = Nil> {
     /// hostname for the thing
@@ -37,6 +46,23 @@ impl Servient<Nil> {
     /// Instantiate a ThingBuilder with its Form augmented with [[HttpRouter]] methods.
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
+    }
+}
+
+impl<O: ExtendableThing> Servient<O> {
+    /// Start a listening server and advertise for it.
+    pub async fn serve(&self) -> Result<(), Error> {
+        self.sd
+            .add_service(&self.name)
+            .thing_type(self.thing_type)
+            .build()?;
+
+        axum::Server::bind(&self.http_addr)
+            .serve(self.router.clone().into_make_service())
+            .await
+            .map_err(axum::Error::new)?;
+
+        Ok(())
     }
 }
 
