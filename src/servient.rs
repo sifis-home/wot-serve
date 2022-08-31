@@ -11,9 +11,9 @@ use wot_td::{
     thing::Thing,
 };
 
-mod builder;
+pub(crate) mod builder;
 
-pub use builder::*;
+use builder::ServientExtension;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -43,7 +43,12 @@ pub struct Servient<Other: ExtendableThing = Nil> {
 }
 
 impl Servient<Nil> {
-    /// Instantiate a ThingBuilder with its Form augmented with [[HttpRouter]] methods.
+    /// Instantiate a ThingBuilder augmented with [ServientExtension]
+    ///
+    /// The [ThingBuilder](crate::builder::ThingBuilder) accepts [ServientSettings](builder::ServientSettings)
+    /// methods.
+    /// Its [FormBuilder](crate::builder::FormBuilder) is augmented with [HttpRouter](builder::HttpRouter)
+    /// methods.
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
@@ -68,7 +73,8 @@ impl<O: ExtendableThing> Servient<O> {
 
 #[cfg(test)]
 mod test {
-    use wot_td::{builder::affordance::*, builder::data_schema::*, thing::FormOperation};
+    use crate::builder::*;
+    use crate::thing::FormOperation;
 
     use crate::advertise::ThingType;
 

@@ -1,11 +1,9 @@
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use wot_serve::servient::*;
-use wot_td::{
-    builder::{affordance::BuildableInteractionAffordance, data_schema::SpecializableDataSchema},
-    extend::ExtendableThing,
-};
+use wot_serve::builder::*;
+use wot_serve::Servient;
+use wot_td::extend::ExtendableThing;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct A {}
