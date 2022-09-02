@@ -49,7 +49,7 @@ impl Servient<Nil> {
     /// methods.
     /// Its [FormBuilder](crate::builder::FormBuilder) is augmented with [HttpRouter](builder::HttpRouter)
     /// methods.
-    pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
+    pub fn build(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
 }
@@ -82,7 +82,7 @@ mod test {
 
     #[test]
     fn build_servient() {
-        let servient = Servient::builder("test")
+        let servient = Servient::build("test")
             .finish_extend()
             .form(|f| {
                 f.href("/ref")
@@ -102,7 +102,7 @@ mod test {
 
     #[test]
     fn build_servient_property() {
-        let servient = Servient::builder("test")
+        let servient = Servient::build("test")
             .finish_extend()
             .property("hello", |b| {
                 b.finish_extend_data_schema().null().form(|f| {
@@ -121,7 +121,7 @@ mod test {
 
     #[test]
     fn build_servient_action() {
-        let servient = Servient::builder("test")
+        let servient = Servient::build("test")
             .finish_extend()
             .action("hello", |b| {
                 b.input(|i| i.finish_extend().number()).form(|f| {
@@ -150,7 +150,7 @@ mod test {
     #[test]
     fn servient_setup() {
         let addr = "0.0.0.0:3000".parse().unwrap();
-        let servient = Servient::builder("test me")
+        let servient = Servient::build("test me")
             .finish_extend()
             .http_bind(addr)
             .thing_type(ThingType::Directory)

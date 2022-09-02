@@ -22,7 +22,7 @@ impl ExtendableThing for A {
 
 #[tokio::main]
 async fn main() {
-    let servient = Servient::builder("TestThing")
+    let servient = Servient::build("TestThing")
         .ext(A {})
         .finish_extend()
         .http_bind("127.0.0.1:8080".parse().unwrap())
