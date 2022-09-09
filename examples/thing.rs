@@ -40,6 +40,25 @@ async fn main() {
                 })
                 .string()
         })
+        .action("say_hello", |b| {
+            b.ext(())
+                .ext_interaction(())
+                .form(|b| {
+                    b.ext(())
+                        .http_post(|| async { "I'm saying hello" })
+                        .href("/say_hello")
+                })
+                .input(|b| b.ext(()).finish_extend().null())
+                .form(|b| {
+                    b.ext(())
+                        .href("/say_hello/{action_id}")
+                        .http_get(|| async { "Checking ..." })
+                        .op(wot_td::thing::FormOperation::QueryAction)
+                        .http_delete(|| async { "Canceling ..." })
+                        .op(wot_td::thing::FormOperation::CancelAction)
+                })
+                .uri_variable("action_id", |b| b.ext(()).finish_extend().string())
+        })
         .build_servient()
         .unwrap();
 
