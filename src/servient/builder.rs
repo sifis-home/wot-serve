@@ -7,6 +7,7 @@ use crate::{
 };
 use axum::{handler::Handler, routing::MethodRouter, Router};
 
+use datta::{Operator, UriTemplate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use wot_td::{
@@ -86,6 +87,41 @@ pub trait BuildServient {
     fn build_servient(self) -> Result<Servient<Self::Other>, Box<dyn std::error::Error>>;
 }
 
+fn uritemplate_to_axum(uri: &str) -> String {
+    use datta::TemplateComponent::*;
+    let t = UriTemplate::new(uri);
+    let mut path = String::new();
+
+    for component in t.components() {
+        match component {
+            Literal(ref l) => path.push_str(l),
+            VarList(ref op, ref varspec) => match op {
+                Operator::Null => {
+                    assert_eq!(
+                        varspec.len(),
+                        1,
+                        "more than one variable in the expression is not supported."
+                    );
+                    path.push(':');
+                    path.push_str(&varspec[0].name);
+                }
+                Operator::Slash => {
+                    for v in varspec {
+                        path.push_str("/:");
+                        path.push_str(&v.name);
+                    }
+                }
+                Operator::Question | Operator::Hash => break,
+                Operator::Ampersand | Operator::Dot | Operator::Semi | Operator::Plus => {
+                    panic!("Unsupported operator")
+                }
+            },
+        }
+    }
+
+    path
+}
+
 impl<O: ExtendableThing> BuildServient for ThingBuilder<O, wot_td::builder::Extended>
 where
     O: Holder<ServientExtension>,
@@ -121,7 +157,9 @@ where
         {
             let route = form.other.field_ref();
 
-            router = router.route(&form.href, route.method_router.clone());
+            let href = uritemplate_to_axum(&form.href);
+
+            router = router.route(&href, route.method_router.clone());
         }
 
         // TODO: Figure out how to share the thing description and if we want to.
@@ -250,5 +288,36 @@ where
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
         self.other.field_mut().method_router = method_router.delete(handler);
         self
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn uritemplate(uri: &str, axum: &str) {
+        let a = uritemplate_to_axum(uri);
+
+        assert_eq!(&a, axum);
+    }
+
+    #[test]
+    fn plain_uri() {
+        uritemplate("/properties/on", "/properties/on");
+    }
+
+    #[test]
+    fn hierarchical_uri() {
+        uritemplate("/properties{/prop,sub}", "/properties/:prop/:sub");
+    }
+
+    #[test]
+    fn templated_uri() {
+        uritemplate("/actions/fade/{action_id}", "/actions/fade/:action_id");
+    }
+
+    #[test]
+    fn query_uri() {
+        uritemplate("/weather/{?lat,long}", "/weather/");
     }
 }
