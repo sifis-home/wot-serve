@@ -24,8 +24,6 @@ pub enum Error {
         #[from]
         source: std::io::Error,
     },
-    #[error(transparent)]
-    Other(#[from] anyhow::Error),
 }
 
 /// Result type for the module
