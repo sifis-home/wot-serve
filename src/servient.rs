@@ -55,6 +55,7 @@ impl<O: ExtendableThing> Servient<O> {
         self.sd
             .add_service(&self.name)
             .thing_type(self.thing_type)
+            .port(self.http_addr.port())
             .build()?;
 
         axum::Server::bind(&self.http_addr)
