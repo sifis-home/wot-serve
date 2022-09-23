@@ -14,8 +14,10 @@ use mdns_sd::{ServiceDaemon, ServiceInfo};
 /// Error type for the module
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// mDNS internal error
     #[error("mdns internal error {0}")]
     Mdns(#[from] mdns_sd::Error),
+    /// Network-specific error
     #[error("I/O error {0}")]
     Io(#[from] std::io::Error),
 }
@@ -23,15 +25,15 @@ pub enum Error {
 /// Result type for the module
 pub type Result<T> = std::result::Result<T, Error>;
 
-/// Type of thing being published
+/// Type of Thing being published
 #[derive(Debug, Clone, Default, PartialEq, Eq, Copy)]
 pub enum ThingType {
-    /// Normal thing
+    /// Normal `Thing`.
     #[default]
     Thing,
-    /// Directory
+    /// Thing Directory
     ///
-    /// A thing hosting a directory of things
+    /// A `Thing` hosting a directory of `Thing`s.
     Directory,
 }
 
@@ -54,8 +56,8 @@ impl ThingType {
 
 /// Service advertiser
 ///
-/// A thing may be Advertised through a number of different means
-/// the current implementation uses only mdns-sd
+/// A thing may be Advertised through a number of different means,
+/// the current implementation uses only mdns-sd.
 pub struct Advertiser {
     pub(crate) mdns: ServiceDaemon,
     /// Default set of ips for the system
@@ -68,7 +70,7 @@ const WELL_KNOWN: &str = "/.well-known/wot";
 
 /// Builder to create a service
 ///
-/// Call [ServiceBuilder::build] to publish it.
+/// Call [`ServiceBuilder::build`] to publish it.
 pub struct ServiceBuilder<'a> {
     mdns: &'a ServiceDaemon,
     ips: Vec<Ipv4Addr>,
@@ -101,7 +103,7 @@ impl<'a> ServiceBuilder<'a> {
         self
     }
 
-    /// The listening port for the advertised Thing
+    /// The listening port for the advertised `Thing`.
     pub fn port(mut self, port: u16) -> Self {
         self.port = port;
 
@@ -117,7 +119,7 @@ impl<'a> ServiceBuilder<'a> {
         self
     }
 
-    /// The hostname used by the MDNS daemon
+    /// The hostname used by the MDNS daemon.
     pub fn hostname(mut self, host: impl Into<String>) -> Self {
         self.hostname = host.into();
 
@@ -133,7 +135,7 @@ impl<'a> ServiceBuilder<'a> {
         self
     }
 
-    /// Consume the builder and register the service
+    /// Consume the builder and register the service.
     pub fn build(self) -> Result<()> {
         let Self {
             mdns,
@@ -168,7 +170,7 @@ impl<'a> ServiceBuilder<'a> {
 }
 
 impl Advertiser {
-    /// Create a new service advertiser
+    /// Create a new service advertiser.
     pub fn new() -> Result<Self> {
         let mdns = ServiceDaemon::new()?;
 
@@ -198,7 +200,7 @@ impl Advertiser {
         Ok(sa)
     }
 
-    /// Register and Advertise a new service
+    /// Register and Advertise a new service.
     pub fn add_service(&self, name: impl Into<String>) -> ServiceBuilder {
         ServiceBuilder::new(self, name)
     }

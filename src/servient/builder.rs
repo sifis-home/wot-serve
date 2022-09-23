@@ -16,9 +16,10 @@ use wot_td::{
 };
 
 #[doc(hidden)]
-/// ThingBuilder ExtendableThing used to build a Servient via HttpRouter methods.
+/// ThingBuilder ExtendableThing used to build a Servient
 ///
-/// It is not needed to know about it nor use it.
+/// It is not needed to know about it nor use it directly.
+/// Instantiate a correct builder by calling [`Servient::builder`].
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct ServientExtension {
     /// Listening address
@@ -55,7 +56,7 @@ impl ExtendableThing for ServientExtension {
     type ArraySchema = ();
 }
 
-/// Extension trait for the [Servient] configuration.
+/// Extension trait for the [`Servient`] configuration.
 pub trait ServientSettings {
     /// Bind the http server to addr
     fn http_bind(self, addr: SocketAddr) -> Self;
@@ -78,12 +79,15 @@ where
     }
 }
 
-/// Trait extension to build a [Servient] from an extended [ThingBuilder]
+/// Trait extension to build a [`Servient`] from an extended [`ThingBuilder`]
 ///
 /// TODO: Add an example
 pub trait BuildServient {
+    /// Extension type for the [`Servient`] and underlying [`Thing`].
+    ///
+    /// [`Thing`]: wot_td::thing::Thing
     type Other: ExtendableThing;
-    /// Build the configured Servient
+    /// Build the configured [`Servient`].
     fn build_servient(self) -> Result<Servient<Self::Other>, Box<dyn std::error::Error>>;
 }
 
@@ -203,7 +207,13 @@ where
     }
 }
 
+/// Extension trait to build http routes while assembling [`Form`] using the
+/// extended [`FormBuilder`].
+///
+/// [`Form`]: wot_td::thing::Form
+/// [`FormBuilder`]: wot_td::builder::FormBuilder
 pub trait HttpRouter {
+    /// Specialisation of [wot_td::builder::FormBuilder]
     type Target;
     /// Route GET requests to the given handler.
     fn http_get<H, T>(self, handler: H) -> Self::Target

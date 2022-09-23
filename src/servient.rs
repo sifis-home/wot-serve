@@ -15,16 +15,24 @@ mod builder;
 
 pub use builder::*;
 
+/// Error type for the Servient.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// Error setting up the http application server.
     #[error("http internal error {0}")]
     Http(#[from] axum::Error),
 
+    /// Error setting up the mDNS advertiser.
     #[error("mdns internal error {0}")]
     Advertise(#[from] crate::advertise::Error),
 }
 
-/// WoT Servient serving a Thing Description
+/// WoT Servient serving a Thing
+///
+/// The application server and the [`Thing`] Description should be built at the same
+/// time using [`Servient::builder`].
+///
+/// [`Thing`]: wot_td::thing::Thing
 pub struct Servient<Other: ExtendableThing = Nil> {
     /// hostname for the thing
     ///
@@ -43,7 +51,7 @@ pub struct Servient<Other: ExtendableThing = Nil> {
 }
 
 impl Servient<Nil> {
-    /// Instantiate a ThingBuilder with its Form augmented with [[HttpRouter]] methods.
+    /// Instantiate a ThingBuilder with its Form augmented with [`HttpRouter`] methods.
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
