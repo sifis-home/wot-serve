@@ -14,16 +14,10 @@ use mdns_sd::{ServiceDaemon, ServiceInfo};
 /// Error type for the module
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("mdns internal error {source}")]
-    Mdns {
-        #[from]
-        source: mdns_sd::Error,
-    },
-    #[error("I/O error {source}")]
-    Io {
-        #[from]
-        source: std::io::Error,
-    },
+    #[error("mdns internal error {0}")]
+    Mdns(#[from] mdns_sd::Error),
+    #[error("I/O error {0}")]
+    Io(#[from] std::io::Error),
 }
 
 /// Result type for the module
