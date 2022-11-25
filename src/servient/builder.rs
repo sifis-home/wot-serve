@@ -218,27 +218,27 @@ pub trait HttpRouter {
     /// Route GET requests to the given handler.
     fn http_get<H, T>(self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static;
     /// Route PUT requests to the given handler.
     fn http_put<H, T>(self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static;
     /// Route POST requests to the given handler.
     fn http_post<H, T>(self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static;
     /// Route PATCH requests to the given handler.
     fn http_patch<H, T>(self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static;
     /// Route DELETE requests to the given handler.
     fn http_delete<H, T>(self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static;
 }
 
@@ -252,7 +252,7 @@ where
     /// Route GET requests to the given handler.
     fn http_get<H, T>(mut self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
@@ -262,7 +262,7 @@ where
     /// Route PUT requests to the given handler.
     fn http_put<H, T>(mut self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
@@ -272,7 +272,7 @@ where
     /// Route POST requests to the given handler.
     fn http_post<H, T>(mut self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
@@ -282,7 +282,7 @@ where
     /// Route PATCH requests to the given handler.
     fn http_patch<H, T>(mut self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
@@ -292,7 +292,7 @@ where
     /// Route DELETE requests to the given handler.
     fn http_delete<H, T>(mut self, handler: H) -> Self::Target
     where
-        H: Handler<T, axum::body::Body>,
+        H: Handler<T, (), axum::body::Body>,
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
