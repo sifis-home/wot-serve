@@ -221,8 +221,8 @@ mod test {
             |b| b.hostname("testhost"),
             |info| {
                 let props = info.get_properties();
-                assert_eq!(props["td"], WELL_KNOWN);
-                assert_eq!(props["type"], "Thing");
+                assert_eq!(props.get_property_val("td"), Some(WELL_KNOWN));
+                assert_eq!(props.get_property_val("type"), Some("Thing"));
                 assert_eq!(info.get_hostname(), "testhost.");
             },
         );
@@ -236,8 +236,8 @@ mod test {
             |b| b.path("/test/path"),
             |info| {
                 let props = info.get_properties();
-                assert_eq!(props["td"], "/test/path");
-                assert_eq!(props["type"], "Thing");
+                assert_eq!(props.get_property_val("td"), Some("/test/path"));
+                assert_eq!(props.get_property_val("type"), Some("Thing"));
             },
         );
     }
@@ -250,8 +250,8 @@ mod test {
             |b| b.thing_type(ThingType::Directory),
             |info| {
                 let props = info.get_properties();
-                assert_eq!(props["td"], WELL_KNOWN);
-                assert_eq!(props["type"], "Directory");
+                assert_eq!(props.get_property_val("td"), Some(WELL_KNOWN));
+                assert_eq!(props.get_property_val("type"), Some("Directory"));
             },
         );
     }
