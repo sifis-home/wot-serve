@@ -6,6 +6,7 @@
 [![dependency status](https://deps.rs/repo/github/sifis-home/wot-serve/status.svg)](https://deps.rs/repo/github/sifis-home/wot-serve)
 [![Documentation](https://docs.rs/wot-serve/badge.svg)](https://docs.rs/wot-serve/)
 [![codecov](https://codecov.io/gh/sifis-home/wot-serve/branch/master/graph/badge.svg?token=SjNywVTzsg)](https://codecov.io/gh/sifis-home/wot-serve)
+[![wot discord](https://img.shields.io/badge/wot-discord-blue)](https://discord.gg/5zy68ukBrv)
 
 
 Rust crate to serve [Web Of Things](https://www.w3.org/WoT/) Things.
