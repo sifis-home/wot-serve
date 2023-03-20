@@ -6,6 +6,7 @@ use crate::{
     servient::Servient,
 };
 use axum::{handler::Handler, routing::MethodRouter, Router};
+use tower_http::cors::*;
 
 use datta::{Operator, UriTemplate};
 use serde::{Deserialize, Serialize};
@@ -20,7 +21,7 @@ use wot_td::{
 ///
 /// It is not needed to know about it nor use it directly.
 /// Instantiate a correct builder by calling [`Servient::builder`].
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ServientExtension {
     /// Listening address
     #[serde(skip)]
@@ -28,6 +29,18 @@ pub struct ServientExtension {
     /// Thing type
     #[serde(skip)]
     thing_type: ThingType,
+    #[serde(skip)]
+    permissive_cors: bool,
+}
+
+impl Default for ServientExtension {
+    fn default() -> Self {
+        ServientExtension {
+            addr: None,
+            thing_type: ThingType::default(),
+            permissive_cors: true,
+        }
+    }
 }
 
 #[doc(hidden)]
@@ -62,6 +75,8 @@ pub trait ServientSettings {
     fn http_bind(self, addr: SocketAddr) -> Self;
     /// Set the thing type to be advertised.
     fn thing_type(self, ty: ThingType) -> Self;
+    /// Disable the default CORS settings.
+    fn http_disable_permissive_cors(self) -> Self;
 }
 
 impl<O: ExtendableThing> ServientSettings for ThingBuilder<O, wot_td::builder::Extended>
@@ -75,6 +90,11 @@ where
 
     fn thing_type(mut self, ty: ThingType) -> Self {
         self.other.field_mut().thing_type = ty;
+        self
+    }
+
+    fn http_disable_permissive_cors(mut self) -> Self {
+        self.other.field_mut().permissive_cors = false;
         self
     }
 }
@@ -173,6 +193,13 @@ where
             "/.well-known/wot",
             axum::routing::get(move || async { axum::Json(json) }),
         );
+
+        if thing.other.field_ref().permissive_cors {
+            let cors = CorsLayer::new()
+                .allow_methods(tower_http::cors::Any)
+                .allow_origin(tower_http::cors::Any);
+            router = router.layer(cors);
+        }
 
         let sd = Advertiser::new()?;
 

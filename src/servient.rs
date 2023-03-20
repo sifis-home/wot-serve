@@ -52,6 +52,9 @@ pub struct Servient<Other: ExtendableThing = Nil> {
 
 impl Servient<Nil> {
     /// Instantiate a ThingBuilder with its Form augmented with [`HttpRouter`] methods.
+    ///
+    /// By default it sets the CORS headers to allow any origin, you may disable the behaviour
+    /// by calling [ServientSettings::http_disable_permissive_cors].
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
@@ -157,6 +160,7 @@ mod test {
             .finish_extend()
             .http_bind(addr)
             .thing_type(ThingType::Directory)
+            .http_disable_permissive_cors()
             .build_servient()
             .unwrap();
 
