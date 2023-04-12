@@ -68,6 +68,7 @@ async fn main() {
 
     eprintln!("Listening to 127.0.0.1:8080");
     dbg!(&servient.router);
+    dbg!(&servient.thing);
 
     println!("Running the servient for 10 seconds.");
     let _ = tokio::time::timeout(Duration::from_secs(10), async {

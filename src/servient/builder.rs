@@ -12,8 +12,9 @@ use datta::{Operator, UriTemplate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use wot_td::{
-    builder::{FormBuilder, FormBuilderInner, ThingBuilder, CAN_ADD_ANY_OPS},
+    builder::{FormBuilderInner, ThingBuilder, CAN_ADD_ANY_OPS},
     extend::ExtendableThing,
+    protocol::http,
 };
 
 #[doc(hidden)]
@@ -49,12 +50,9 @@ impl Default for ServientExtension {
 pub struct Form {
     #[serde(skip)]
     method_router: MethodRouter,
-}
 
-impl From<MethodRouter> for Form {
-    fn from(method_router: MethodRouter) -> Self {
-        Self { method_router }
-    }
+    #[serde(flatten)]
+    htv: http::Form,
 }
 
 impl ExtendableThing for ServientExtension {
@@ -63,7 +61,7 @@ impl ExtendableThing for ServientExtension {
     type ActionAffordance = ();
     type EventAffordance = ();
     type Form = Form;
-    type ExpectedResponse = ();
+    type ExpectedResponse = http::Response;
     type DataSchema = ();
     type ObjectSchema = ();
     type ArraySchema = ();
@@ -284,7 +282,9 @@ where
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
-        self.other.field_mut().method_router = method_router.get(handler);
+        let f = self.other.field_mut();
+        f.method_router = method_router.get(handler);
+        f.htv.method_name = Some(http::Method::Get);
         self
     }
     /// Route PUT requests to the given handler.
@@ -294,7 +294,9 @@ where
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
-        self.other.field_mut().method_router = method_router.put(handler);
+        let f = self.other.field_mut();
+        f.method_router = method_router.put(handler);
+        f.htv.method_name = Some(http::Method::Put);
         self
     }
     /// Route POST requests to the given handler.
@@ -304,7 +306,9 @@ where
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
-        self.other.field_mut().method_router = method_router.post(handler);
+        let f = self.other.field_mut();
+        f.method_router = method_router.post(handler);
+        f.htv.method_name = Some(http::Method::Post);
         self
     }
     /// Route PATCH requests to the given handler.
@@ -314,7 +318,9 @@ where
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
-        self.other.field_mut().method_router = method_router.patch(handler);
+        let f: &mut Form = self.other.field_mut();
+        f.method_router = method_router.patch(handler);
+        f.htv.method_name = Some(http::Method::Patch);
         self
     }
     /// Route DELETE requests to the given handler.
@@ -324,7 +330,9 @@ where
         T: 'static,
     {
         let method_router = std::mem::take(&mut self.other.field_mut().method_router);
-        self.other.field_mut().method_router = method_router.delete(handler);
+        let f: &mut Form = self.other.field_mut();
+        f.method_router = method_router.delete(handler);
+        f.htv.method_name = Some(http::Method::Delete);
         self
     }
 }
