@@ -54,6 +54,10 @@ async fn main() {
                         .href("/say_hello/{action_id}")
                         .http_get(|| async { "Checking ..." })
                         .op(wot_td::thing::FormOperation::QueryAction)
+                })
+                .form(|b| {
+                    b.ext(())
+                        .href("/say_hello/{action_id}")
                         .http_delete(|| async { "Canceling ..." })
                         .op(wot_td::thing::FormOperation::CancelAction)
                 })
