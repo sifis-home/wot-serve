@@ -14,6 +14,7 @@ pub struct NilPlus<T> {
 pub struct ConsPlus<T, U, V> {
     #[serde(flatten)]
     pub field: T,
+    #[serde(flatten)]
     cons: Cons<U, V>,
 }
 
