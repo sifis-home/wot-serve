@@ -12,7 +12,7 @@ use datta::{Operator, UriTemplate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use wot_td::{
-    builder::{FormBuilder, ThingBuilder},
+    builder::{FormBuilder, FormBuilderInner, ThingBuilder, CAN_ADD_ANY_OPS},
     extend::ExtendableThing,
 };
 
@@ -269,12 +269,13 @@ pub trait HttpRouter {
         T: 'static;
 }
 
-impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm>
+impl<Other, Href, OtherForm> HttpRouter
+    for FormBuilderInner<Other, Href, OtherForm, CAN_ADD_ANY_OPS>
 where
     Other: ExtendableThing + Holder<ServientExtension>,
     OtherForm: Holder<Form>,
 {
-    type Target = FormBuilder<Other, Href, OtherForm>;
+    type Target = FormBuilderInner<Other, Href, OtherForm, CAN_ADD_ANY_OPS>;
 
     /// Route GET requests to the given handler.
     fn http_get<H, T>(mut self, handler: H) -> Self::Target
