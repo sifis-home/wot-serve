@@ -111,13 +111,18 @@ mod test {
         let servient = Servient::builder("test")
             .finish_extend()
             .property("hello", |b| {
-                b.finish_extend_data_schema().null().form(|f| {
-                    f.href("/hello")
-                        .http_get(|| async { "Reading Hello, World!" })
-                        .http_put(|| async { "Writing Hello, World!" })
-                        .op(FormOperation::ReadProperty)
-                        .op(FormOperation::WriteProperty)
-                })
+                b.finish_extend_data_schema()
+                    .null()
+                    .form(|f| {
+                        f.href("/hello")
+                            .http_get(|| async { "Reading Hello, World!" })
+                            .op(FormOperation::ReadProperty)
+                    })
+                    .form(|f| {
+                        f.href("/hello")
+                            .http_put(|| async { "Writing Hello, World!" })
+                            .op(FormOperation::WriteProperty)
+                    })
             })
             .build_servient()
             .unwrap();

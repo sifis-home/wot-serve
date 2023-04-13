@@ -12,7 +12,7 @@ use datta::{Operator, UriTemplate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use wot_td::{
-    builder::{FormBuilderInner, ThingBuilder, CAN_ADD_ANY_OPS},
+    builder::{FormBuilder, ThingBuilder, CAN_ADD_ANY_OPS, CAN_ADD_ONE_OP},
     extend::ExtendableThing,
     protocol::http,
 };
@@ -267,13 +267,12 @@ pub trait HttpRouter {
         T: 'static;
 }
 
-impl<Other, Href, OtherForm> HttpRouter
-    for FormBuilderInner<Other, Href, OtherForm, CAN_ADD_ANY_OPS>
+impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm, CAN_ADD_ANY_OPS>
 where
     Other: ExtendableThing + Holder<ServientExtension>,
     OtherForm: Holder<Form>,
 {
-    type Target = FormBuilderInner<Other, Href, OtherForm, CAN_ADD_ANY_OPS>;
+    type Target = FormBuilder<Other, Href, OtherForm, CAN_ADD_ONE_OP>;
 
     /// Route GET requests to the given handler.
     fn http_get<H, T>(mut self, handler: H) -> Self::Target
@@ -285,7 +284,7 @@ where
         let f = self.other.field_mut();
         f.method_router = method_router.get(handler);
         f.htv.method_name = Some(http::Method::Get);
-        self
+        self.into()
     }
     /// Route PUT requests to the given handler.
     fn http_put<H, T>(mut self, handler: H) -> Self::Target
@@ -297,7 +296,7 @@ where
         let f = self.other.field_mut();
         f.method_router = method_router.put(handler);
         f.htv.method_name = Some(http::Method::Put);
-        self
+        self.into()
     }
     /// Route POST requests to the given handler.
     fn http_post<H, T>(mut self, handler: H) -> Self::Target
@@ -309,7 +308,7 @@ where
         let f = self.other.field_mut();
         f.method_router = method_router.post(handler);
         f.htv.method_name = Some(http::Method::Post);
-        self
+        self.into()
     }
     /// Route PATCH requests to the given handler.
     fn http_patch<H, T>(mut self, handler: H) -> Self::Target
@@ -321,7 +320,7 @@ where
         let f: &mut Form = self.other.field_mut();
         f.method_router = method_router.patch(handler);
         f.htv.method_name = Some(http::Method::Patch);
-        self
+        self.into()
     }
     /// Route DELETE requests to the given handler.
     fn http_delete<H, T>(mut self, handler: H) -> Self::Target
@@ -333,7 +332,7 @@ where
         let f: &mut Form = self.other.field_mut();
         f.method_router = method_router.delete(handler);
         f.htv.method_name = Some(http::Method::Delete);
-        self
+        self.into()
     }
 }
 
