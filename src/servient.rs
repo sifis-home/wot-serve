@@ -55,6 +55,41 @@ impl Servient<Nil> {
     ///
     /// By default it sets the CORS headers to allow any origin, you may disable the behaviour
     /// by calling [ServientSettings::http_disable_permissive_cors].
+    ///
+    /// # Examples
+    ///
+    /// This should fail:
+    /// ```compile_fail
+    /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
+    /// # use wot_td::thing::FormOperation;
+    /// let servient = Servient::builder("test")
+    ///     .finish_extend()
+    ///     .form(|f| {
+    ///         f.href("/ref")
+    ///             .http_get(|| async { "Hello, World!" })
+    ///             .op(FormOperation::ReadAllProperties)
+    ///             .op(FormOperation::WriteAllProperties)
+    ///             .into()
+    ///     })
+    ///     .build_servient()
+    ///     .unwrap();
+    /// ```
+    ///
+    /// This should work instead.
+    /// ```
+    /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
+    /// # use wot_td::thing::FormOperation;
+    /// let servient = Servient::builder("test")
+    ///     .finish_extend()
+    ///     .form(|f| {
+    ///         f.href("/ref")
+    ///             .http_get(|| async { "Hello, World!" })
+    ///             .op(FormOperation::ReadAllProperties)
+    ///             .into()
+    ///     })
+    ///     .build_servient()
+    ///     .unwrap();
+    /// ```
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
@@ -94,11 +129,13 @@ mod test {
                 f.href("/ref")
                     .http_get(|| async { "Hello, World!" })
                     .op(FormOperation::ReadAllProperties)
+                    .into()
             })
             .form(|f| {
                 f.href("/ref2")
                     .http_get(|| async { "Hello, World! 2" })
                     .op(FormOperation::ReadAllProperties)
+                    .into()
             })
             .build_servient()
             .unwrap();
@@ -117,11 +154,13 @@ mod test {
                         f.href("/hello")
                             .http_get(|| async { "Reading Hello, World!" })
                             .op(FormOperation::ReadProperty)
+                            .into()
                     })
                     .form(|f| {
                         f.href("/hello")
                             .http_put(|| async { "Writing Hello, World!" })
                             .op(FormOperation::WriteProperty)
+                            .into()
                     })
             })
             .build_servient()
@@ -138,18 +177,21 @@ mod test {
                 b.input(|i| i.finish_extend().number()).form(|f| {
                     f.href("/say_hello")
                         .http_post(|| async { "Saying Hello, World!" })
+                        .into()
                 })
             })
             .action("update", |b| {
                 b.form(|f| {
                     f.href("/update_hello")
                         .http_patch(|| async { "Updating Hello, World!" })
+                        .into()
                 })
             })
             .action("delete", |b| {
                 b.form(|f| {
                     f.href("/delete_hello")
                         .http_delete(|| async { "Goodbye, World!" })
+                        .into()
                 })
             })
             .build_servient()
