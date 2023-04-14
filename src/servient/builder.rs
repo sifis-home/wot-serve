@@ -12,9 +12,9 @@ use datta::{Operator, UriTemplate};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use wot_td::{
-    builder::{FormBuilder, ThingBuilder, CAN_ADD_ANY_OPS, CAN_ADD_ONE_OP},
-    extend::ExtendableThing,
-    protocol::http,
+    builder::{AdditionalExpectedResponseBuilder, FormBuilder, ThingBuilder},
+    extend::{Extend, ExtendableThing},
+    protocol::http, thing::FormOperation,
 };
 
 #[doc(hidden)]
@@ -267,12 +267,95 @@ pub trait HttpRouter {
         T: 'static;
 }
 
-impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm, CAN_ADD_ANY_OPS>
+pub struct ServientFormBuilder<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool>(
+    FormBuilder<Other, Href, OtherForm>,
+);
+
+impl<Other: ExtendableThing, OtherForm, const HAS_OP: bool> ServientFormBuilder<Other, (), OtherForm, HAS_OP> {
+    /// Create a new builder with the specified Href
+    ///
+    /// See [FormBuilder::href].
+    #[inline]
+    pub fn href(self, value: impl Into<String>) -> ServientFormBuilder<Other, String, OtherForm, HAS_OP> {
+        ServientFormBuilder(self.0.href(value))
+    }
+}
+
+impl<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool> ServientFormBuilder<Other, Href, OtherForm, HAS_OP> {
+    /// Set the security definitions that must be satisfied to access the resource
+    ///
+    /// See [FormBuilder::security].
+    #[inline]
+    pub fn security(self, value: impl Into<String>) -> Self {
+        Self(self.0.security(value))
+    }
+
+    /// Set the authorization scope identifiers
+    ///
+    /// See [FormBuilder::scope]
+    #[inline]
+    pub fn scope(self, value: impl Into<String>) -> Self {
+        Self(self.0.scope(value))
+    }
+
+    /// Adds an additional response to the form builder.
+    ///
+    /// See [FormBuilder::additional_response]
+    #[inline]
+    pub fn additional_response<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut AdditionalExpectedResponseBuilder) -> &mut AdditionalExpectedResponseBuilder,
+    {
+        Self(self.0.additional_response(f))
+    }
+
+    /// Extends the form, passing a closure that returns `T`.
+    ///
+    /// See [FormBuilder::ext_with]
+    #[inline]
+    pub fn ext_with<F, T>(self, f: F) -> ServientFormBuilder<Other, Href, OtherForm::Target, HAS_OP>
+    where
+        OtherForm: Extend<T>,
+        F: FnOnce() -> T,
+    {
+        ServientFormBuilder(self.0.ext_with(f))
+    }
+
+    /// Extends the form with an additional element.
+    ///
+    /// See [FormBuilder::ext].
+    #[inline]
+    pub fn ext<T>(self, t: T) -> ServientFormBuilder<Other, Href, OtherForm::Target, HAS_OP>
+    where
+        OtherForm: Extend<T>,
+    {
+        ServientFormBuilder(self.0.ext(t))
+    }
+}
+
+impl<Other: ExtendableThing, Href, OtherForm> ServientFormBuilder<Other, Href, OtherForm, false> {
+    /// Set the form intended operation
+    ///
+    /// See [FormBuilder::op].
+    pub fn op(self, new_op: FormOperation) -> ServientFormBuilder<Other, Href, OtherForm, true> {
+      ServientFormBuilder(self.0.op(new_op))
+    }
+
+}
+
+impl<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool> From<ServientFormBuilder<Other, Href, OtherForm, HAS_OP>> for FormBuilder<Other, Href, OtherForm> {
+    #[inline]
+    fn from(value: ServientFormBuilder<Other, Href, OtherForm, HAS_OP>) -> Self {
+        value.0
+    }
+}
+
+impl<Other, Href, OtherForm> HttpRouter for FormBuilder<Other, Href, OtherForm>
 where
     Other: ExtendableThing + Holder<ServientExtension>,
     OtherForm: Holder<Form>,
 {
-    type Target = FormBuilder<Other, Href, OtherForm, CAN_ADD_ONE_OP>;
+    type Target = ServientFormBuilder<Other, Href, OtherForm, false>;
 
     /// Route GET requests to the given handler.
     fn http_get<H, T>(mut self, handler: H) -> Self::Target
@@ -284,7 +367,7 @@ where
         let f = self.other.field_mut();
         f.method_router = method_router.get(handler);
         f.htv.method_name = Some(http::Method::Get);
-        self.into()
+        ServientFormBuilder(self)
     }
     /// Route PUT requests to the given handler.
     fn http_put<H, T>(mut self, handler: H) -> Self::Target
@@ -296,7 +379,7 @@ where
         let f = self.other.field_mut();
         f.method_router = method_router.put(handler);
         f.htv.method_name = Some(http::Method::Put);
-        self.into()
+        ServientFormBuilder(self)
     }
     /// Route POST requests to the given handler.
     fn http_post<H, T>(mut self, handler: H) -> Self::Target
@@ -308,7 +391,7 @@ where
         let f = self.other.field_mut();
         f.method_router = method_router.post(handler);
         f.htv.method_name = Some(http::Method::Post);
-        self.into()
+        ServientFormBuilder(self)
     }
     /// Route PATCH requests to the given handler.
     fn http_patch<H, T>(mut self, handler: H) -> Self::Target
@@ -320,7 +403,7 @@ where
         let f: &mut Form = self.other.field_mut();
         f.method_router = method_router.patch(handler);
         f.htv.method_name = Some(http::Method::Patch);
-        self.into()
+        ServientFormBuilder(self)
     }
     /// Route DELETE requests to the given handler.
     fn http_delete<H, T>(mut self, handler: H) -> Self::Target
@@ -332,7 +415,7 @@ where
         let f: &mut Form = self.other.field_mut();
         f.method_router = method_router.delete(handler);
         f.htv.method_name = Some(http::Method::Delete);
-        self.into()
+        ServientFormBuilder(self)
     }
 }
 
