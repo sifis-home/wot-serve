@@ -14,7 +14,8 @@ use uuid::Uuid;
 use wot_td::{
     builder::{AdditionalExpectedResponseBuilder, FormBuilder, ThingBuilder},
     extend::{Extend, ExtendableThing},
-    protocol::http, thing::FormOperation,
+    protocol::http,
+    thing::FormOperation,
 };
 
 #[doc(hidden)]
@@ -271,17 +272,24 @@ pub struct ServientFormBuilder<Other: ExtendableThing, Href, OtherForm, const HA
     FormBuilder<Other, Href, OtherForm>,
 );
 
-impl<Other: ExtendableThing, OtherForm, const HAS_OP: bool> ServientFormBuilder<Other, (), OtherForm, HAS_OP> {
+impl<Other: ExtendableThing, OtherForm, const HAS_OP: bool>
+    ServientFormBuilder<Other, (), OtherForm, HAS_OP>
+{
     /// Create a new builder with the specified Href
     ///
     /// See [FormBuilder::href].
     #[inline]
-    pub fn href(self, value: impl Into<String>) -> ServientFormBuilder<Other, String, OtherForm, HAS_OP> {
+    pub fn href(
+        self,
+        value: impl Into<String>,
+    ) -> ServientFormBuilder<Other, String, OtherForm, HAS_OP> {
         ServientFormBuilder(self.0.href(value))
     }
 }
 
-impl<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool> ServientFormBuilder<Other, Href, OtherForm, HAS_OP> {
+impl<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool>
+    ServientFormBuilder<Other, Href, OtherForm, HAS_OP>
+{
     /// Set the security definitions that must be satisfied to access the resource
     ///
     /// See [FormBuilder::security].
@@ -338,12 +346,14 @@ impl<Other: ExtendableThing, Href, OtherForm> ServientFormBuilder<Other, Href, O
     ///
     /// See [FormBuilder::op].
     pub fn op(self, new_op: FormOperation) -> ServientFormBuilder<Other, Href, OtherForm, true> {
-      ServientFormBuilder(self.0.op(new_op))
+        ServientFormBuilder(self.0.op(new_op))
     }
-
 }
 
-impl<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool> From<ServientFormBuilder<Other, Href, OtherForm, HAS_OP>> for FormBuilder<Other, Href, OtherForm> {
+impl<Other: ExtendableThing, Href, OtherForm, const HAS_OP: bool>
+    From<ServientFormBuilder<Other, Href, OtherForm, HAS_OP>>
+    for FormBuilder<Other, Href, OtherForm>
+{
     #[inline]
     fn from(value: ServientFormBuilder<Other, Href, OtherForm, HAS_OP>) -> Self {
         value.0
