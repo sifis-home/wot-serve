@@ -8,7 +8,7 @@ repository = "https://github.com/sifis-home/wot-serve"
 keywords = ["wot", "WebofThings"]
 
 [dependencies]
-wot-td = "0.2.0"
+wot-td = "0.3.1"
 mdns-sd = "0.7.1"
 thiserror = "1.0"
 if-addrs = "0.10.1"
