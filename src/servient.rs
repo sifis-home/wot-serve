@@ -75,6 +75,22 @@ impl Servient<Nil> {
     ///     .unwrap();
     /// ```
     ///
+    /// This should fail as well:
+    /// ```compile_fail
+    /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
+    /// # use wot_td::thing::FormOperation;
+    /// let servient = Servient::builder("test")
+    ///     .finish_extend()
+    ///     .form(|f| {
+    ///         f.href("/ref")
+    ///             .http_get(|| async { "Hello, World!" })
+    ///             .http_put(|| async { "Hello, World!" })
+    ///             .into()
+    ///     })
+    ///     .build_servient()
+    ///     .unwrap();
+    /// ```
+    ///
     /// This should work instead.
     /// ```
     /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
