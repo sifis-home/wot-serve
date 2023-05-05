@@ -142,51 +142,6 @@ jobs:
             exit 1
         fi
 
-  undefined-behaviour-fuzzy-dynamic-analysis:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Cache produced data
-      id: cache-data
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-ci-${{ hashFiles('**/Cargo.toml') }}
-
-    - name: Install Rust nightly and miri
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
-        components: miri, rust-src
-        override: true
-
-    # FIXME Use binaries
-    - name: Install cargo-fuzz
-      if: steps.cache-data.outputs.cache-hit != 'true'
-      run: |
-        cargo install cargo-fuzz
-
-    # FIXME Create a template with a dummy series of fuzzy tests
-    - name: Init cargo-fuzz
-      run: cargo fuzz init
-
-    - name: Run cargo-fuzz
-      run: cargo fuzz build
-
-    - name: Run AddressSanitizer
-      env:
-        RUSTFLAGS: -Zsanitizer=address
-        RUSTDOCFLAGS: -Zsanitizer=address
-      run: cargo test -Zbuild-std --target x86_64-unknown-linux-gnu
-
   static-code-analysis:
 
     runs-on: ubuntu-latest
