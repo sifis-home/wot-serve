@@ -156,6 +156,7 @@ mod test {
         let servient = Servient::builder("test")
             .ext(E {})
             .finish_extend()
+            .security(|b| b.basic())
             .form(|f| {
                 f.ext(())
                     .href("/ref")
