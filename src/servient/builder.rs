@@ -5,7 +5,7 @@ use crate::{
     hlist::*,
     servient::Servient,
 };
-use axum::{handler::Handler, routing::MethodRouter, Router};
+use axum::{handler::Handler, response::Redirect, routing::MethodRouter, Router};
 use tower_http::cors::*;
 
 use datta::{Operator, UriTemplate};
@@ -189,9 +189,14 @@ where
         // TODO: Figure out how to share the thing description and if we want to.
         let json = serde_json::to_value(&thing)?;
 
+        // We serve The thing from the root
+        router = router.route("/", axum::routing::get(move || async { axum::Json(json) }));
+
+        // We redirect this path to / to support relative Forms with empty base
+        // See: https://www.rfc-editor.org/rfc/rfc3986#section-5.1.3
         router = router.route(
             "/.well-known/wot",
-            axum::routing::get(move || async { axum::Json(json) }),
+            axum::routing::get(move || async { Redirect::to("/") }),
         );
 
         if thing.other.field_ref().permissive_cors {
