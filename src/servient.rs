@@ -55,6 +55,56 @@ impl Servient<Nil> {
     ///
     /// By default it sets the CORS headers to allow any origin, you may disable the behaviour
     /// by calling [ServientSettings::http_disable_permissive_cors].
+    ///
+    /// # Examples
+    ///
+    /// This should fail:
+    /// ```compile_fail
+    /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
+    /// # use wot_td::thing::FormOperation;
+    /// let servient = Servient::builder("test")
+    ///     .finish_extend()
+    ///     .form(|f| {
+    ///         f.href("/ref")
+    ///             .http_get(|| async { "Hello, World!" })
+    ///             .op(FormOperation::ReadAllProperties)
+    ///             .op(FormOperation::WriteAllProperties)
+    ///             .into()
+    ///     })
+    ///     .build_servient()
+    ///     .unwrap();
+    /// ```
+    ///
+    /// This should fail as well:
+    /// ```compile_fail
+    /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
+    /// # use wot_td::thing::FormOperation;
+    /// let servient = Servient::builder("test")
+    ///     .finish_extend()
+    ///     .form(|f| {
+    ///         f.href("/ref")
+    ///             .http_get(|| async { "Hello, World!" })
+    ///             .http_put(|| async { "Hello, World!" })
+    ///             .into()
+    ///     })
+    ///     .build_servient()
+    ///     .unwrap();
+    /// ```
+    ///
+    /// This should work instead.
+    /// ```
+    /// # use wot_serve::{Servient, servient::{BuildServient,HttpRouter}};
+    /// # use wot_td::thing::FormOperation;
+    /// let servient = Servient::builder("test")
+    ///     .finish_extend()
+    ///     .form(|f| {
+    ///         f.href("/ref")
+    ///             .http_get(|| async { "Hello, World!" })
+    ///             .op(FormOperation::ReadAllProperties)
+    ///     })
+    ///     .build_servient()
+    ///     .unwrap();
+    /// ```
     pub fn builder(title: impl Into<String>) -> ThingBuilder<NilPlus<ServientExtension>, ToExtend> {
         ThingBuilder::<NilPlus<ServientExtension>, ToExtend>::new(title)
     }
@@ -86,18 +136,38 @@ mod test {
 
     use super::*;
 
+    #[derive(serde::Serialize)]
+    struct E {}
+
+    impl ExtendableThing for E {
+        type Form = ();
+        type DataSchema = ();
+        type ArraySchema = ();
+        type ObjectSchema = ();
+        type EventAffordance = ();
+        type ActionAffordance = ();
+        type ExpectedResponse = ();
+        type PropertyAffordance = ();
+        type InteractionAffordance = ();
+    }
+
     #[test]
     fn build_servient() {
         let servient = Servient::builder("test")
+            .ext(E {})
             .finish_extend()
+            .security(|b| b.basic())
             .form(|f| {
-                f.href("/ref")
+                f.ext(())
+                    .href("/ref")
                     .http_get(|| async { "Hello, World!" })
                     .op(FormOperation::ReadAllProperties)
             })
             .form(|f| {
                 f.href("/ref2")
                     .http_get(|| async { "Hello, World! 2" })
+                    .ext(())
+                    .security("basic")
                     .op(FormOperation::ReadAllProperties)
             })
             .build_servient()
@@ -111,13 +181,18 @@ mod test {
         let servient = Servient::builder("test")
             .finish_extend()
             .property("hello", |b| {
-                b.finish_extend_data_schema().null().form(|f| {
-                    f.href("/hello")
-                        .http_get(|| async { "Reading Hello, World!" })
-                        .http_put(|| async { "Writing Hello, World!" })
-                        .op(FormOperation::ReadProperty)
-                        .op(FormOperation::WriteProperty)
-                })
+                b.finish_extend_data_schema()
+                    .null()
+                    .form(|f| {
+                        f.href("/hello")
+                            .http_get(|| async { "Reading Hello, World!" })
+                            .op(FormOperation::ReadProperty)
+                    })
+                    .form(|f| {
+                        f.href("/hello")
+                            .http_put(|| async { "Writing Hello, World!" })
+                            .op(FormOperation::WriteProperty)
+                    })
             })
             .build_servient()
             .unwrap();
